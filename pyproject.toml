@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "addon-downloader"
+version = "0.1.0"
+description = "Script para descargar addons de GitHub"
+authors = ["User <user@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+GitPython = "^3.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
