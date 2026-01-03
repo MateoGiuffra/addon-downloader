@@ -1,5 +1,7 @@
 # GitHub Addon Downloader
 
+> Leer en español: [README.es.md](README.es.md)
+
 A simple tool to download multiple GitHub repositories at once.
 
 ## How to Use

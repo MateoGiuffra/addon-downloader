@@ -1,5 +1,7 @@
 # Descargador de Addons de GitHub
 
+> Read in English: [README.md](README.md)
+
 Una herramienta simple para descargar múltiples repositorios de GitHub a la vez.
 
 ## Cómo Usar
