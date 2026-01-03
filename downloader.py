@@ -7,10 +7,20 @@ Supports multiple input formats with GitHub URLs.
 import re
 import os
 import shutil
+import stat
 from pathlib import Path
 from typing import Set, List
 from git import Repo
 from git.exc import GitCommandError
+
+
+def _handle_remove_readonly(func, path, exc_info):
+    """Clear read-only attribute and retry removal on Windows."""
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except Exception:
+        raise
 
 
 def extract_github_urls(text: str) -> Set[str]:
@@ -157,13 +167,26 @@ def main():
         
         if choice == "1":
             print(f"🗑️  Deleting folder {data_path}...")
-            shutil.rmtree(data_path)
-            data_path.mkdir(parents=True, exist_ok=True)
+            try:
+                shutil.rmtree(data_path, onerror=_handle_remove_readonly)
+                data_path.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                print(f"❌ Could not delete or recreate folder. Details: {e}")
+                print("👉 Close any program using files inside AddOns (e.g., Explorer, editors, Git).")
+                return
         else:
-            data_path.mkdir(parents=True, exist_ok=True)
+            try:
+                data_path.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                print(f"❌ Could not create folder. Details: {e}")
+                return
     else:
         print(f"📁 Creating folder: {data_path}")
-        data_path.mkdir(parents=True, exist_ok=True)
+        try:
+            data_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            print(f"❌ Could not create folder. Details: {e}")
+            return
     
     print()
     print("=" * 60)
