@@ -9,7 +9,8 @@ import os
 import shutil
 import stat
 from pathlib import Path
-from typing import Set, List
+from typing import Set
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from git import Repo
 from git.exc import GitCommandError
 
@@ -21,6 +22,9 @@ def _handle_remove_readonly(func, path, exc_info):
         func(path)
     except Exception:
         raise
+
+
+MAX_WORKERS = 12 # cap concurrent downloads
 
 
 def extract_github_urls(text: str) -> Set[str]:
@@ -98,6 +102,40 @@ def clone_repository(url: str, dest_path: Path) -> bool:
     except Exception as e:
         print(f"❌ Unexpected error with {repo_name}: {str(e)}")
         return False
+
+
+def download_repositories(urls: Set[str], dest_path: Path) -> tuple[int, int, list[str]]:
+    """Download repositories in parallel with a cap on worker threads."""
+    total = len(urls)
+    if total == 0:
+        return 0, 0, []
+
+    max_workers = min(MAX_WORKERS, total)
+    successful = 0
+    failed = 0
+    failed_repos: list[str] = []
+
+    url_list = sorted(urls)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_map = {executor.submit(clone_repository, url, dest_path): url for url in url_list}
+
+        for idx, future in enumerate(as_completed(future_map), 1):
+            url = future_map[future]
+            try:
+                ok = future.result()
+            except Exception as e:
+                print(f"❌ Unexpected error with {url}: {e}")
+                ok = False
+
+            if ok:
+                successful += 1
+            else:
+                failed += 1
+                failed_repos.append(url)
+
+
+    return successful, failed, failed_repos
 
 
 def main():
@@ -194,18 +232,8 @@ def main():
     print("=" * 60)
     print()
     
-    # Download repositories
-    successful = 0
-    failed = 0
-    failed_repos = []
-    
-    for i, url in enumerate(sorted(urls), 1):
-        print(f"[{i}/{len(urls)}]", end=" ")
-        if clone_repository(url, data_path):
-            successful += 1
-        else:
-            failed += 1
-            failed_repos.append(url)
+    # Download repositories in parallel (capped workers)
+    successful, failed, failed_repos = download_repositories(urls, data_path)
     
     print()
     print("=" * 60)
