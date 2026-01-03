@@ -35,7 +35,7 @@ Just paste it into the program, press Enter twice, and all three repositories wi
 
 ## Supported URL Formats
 
-El script acepta URLs en estos formatos:
+The script accept these URLs formats:
 
 ```
 C:/Games/TurtleWoW/Interface/AddOns TrainerSkills *https://github.com/refaim/TrainerSkills.git master
